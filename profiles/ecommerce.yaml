@@ -1,0 +1,39 @@
+# Ecommerce / DTC profile. "Unit" is usually a market, site, or product category; channel is
+# the acquisition or sales channel (web, app, marketplace, wholesale).
+
+profile: ecommerce
+extends: generic
+
+vocabulary:
+  unit: market
+  units: markets
+  order: order
+  orders: orders
+  value: average order value
+  value_short: AOV
+
+measures:
+  required: [revenue, orders]
+  optional: [new_customers, sessions, units_sold]
+
+# With sessions present the engine adds a second decomposition: orders = sessions x conversion.
+decomposition:
+  volume: orders
+  value: aov
+  traffic: sessions
+  conversion: cvr               # orders / sessions
+
+rules:
+  min_signal_revenue: 1000
+  unit_move_pct: 0.15
+  unit_move_abs: 1000
+  channel_share_shift_pts: 2.0
+
+playbooks:
+  volume_drop: diagnostics/volume_drop.md
+  value_drop: diagnostics/value_drop.md
+  unit_drop: diagnostics/unit_drop.md
+  channel_shift: diagnostics/channel_shift.md
+  new_customer_drop: diagnostics/new_customer_drop.md
+  conversion_drop: diagnostics/conversion_drop.md
+  general: diagnostics/general.md

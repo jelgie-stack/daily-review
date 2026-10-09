@@ -1,0 +1,39 @@
+# Restaurant profile against the bundled sample database. Same engine, restaurant vocabulary,
+# dayparts derived from order hour, catering reported separately.
+
+business:
+  name: Juniper Kitchen
+  currency: USD
+  timezone: America/Denver
+
+profile: restaurant
+
+warehouse:
+  adapter: duckdb
+  duckdb:
+    path: sample/sample.duckdb
+
+source: orders
+
+columns:
+  date: order_ts
+  unit: unit_id
+  channel: channel
+  hour: EXTRACT(HOUR FROM order_ts)
+
+measures:
+  revenue: SUM(net_sales)
+  orders: COUNT(DISTINCT order_id)
+  new_customers: SUM(CASE WHEN customer_order_number = 1 THEN 1 ELSE 0 END)
+
+filters:
+  core:
+    - "order_status = 'completed'"
+  is_catering: "is_catering = TRUE"
+
+rules:
+  min_signal_revenue: 500
+  unit_move_abs: 250
+
+output:
+  dir: out

@@ -1,0 +1,5 @@
+pyyaml>=6
+duckdb>=1.0          # sample data + local runs; drop if you only use a cloud warehouse
+# google-cloud-bigquery
+# snowflake-connector-python
+# psycopg2-binary

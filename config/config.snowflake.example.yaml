@@ -1,0 +1,39 @@
+# Snowflake example. Password or key-pair auth is read from SNOWFLAKE_PASSWORD /
+# SNOWFLAKE_PRIVATE_KEY_PATH in the environment.
+
+business:
+  name: Your Brand
+  currency: USD
+  timezone: America/Chicago
+
+profile: ecommerce
+
+warehouse:
+  adapter: snowflake
+  snowflake:
+    account: xy12345.us-east-1
+    user: REVIEW_BOT
+    role: ANALYST
+    warehouse: ANALYTICS_WH
+    database: ANALYTICS
+    schema: MARTS
+
+source: FCT_ORDERS
+
+columns:
+  date: ORDER_DATE
+  unit: MARKET
+  channel: SALES_CHANNEL
+
+measures:
+  revenue: SUM(NET_REVENUE)
+  orders: COUNT(DISTINCT ORDER_ID)
+  new_customers: SUM(IFF(IS_FIRST_ORDER, 1, 0))
+  sessions: SUM(SESSIONS)           # if your fact table carries traffic; otherwise remove
+
+filters:
+  core:
+    - "ORDER_STATUS IN ('shipped', 'delivered')"
+
+output:
+  dir: out

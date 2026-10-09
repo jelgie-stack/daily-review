@@ -1,0 +1,47 @@
+# Generic profile: any business with a daily revenue stream and some notion of a "unit"
+# (a store, a region, a product line, an account) and a "channel" (how the order came in).
+#
+# A profile only supplies vocabulary and defaults. Your config.yaml overrides anything here.
+
+profile: generic
+
+vocabulary:
+  unit: unit            # what one row of the unit dimension is called in the brief
+  units: units
+  order: order
+  orders: orders
+  value: average order value
+  value_short: AOV
+
+# Which measures the engine expects to find in config.measures and what they mean.
+# revenue and orders are required; the rest are optional and only reported if present.
+measures:
+  required: [revenue, orders]
+  optional: [new_customers, units_sold, sessions]
+
+# How revenue is explained. volume x value is the one decomposition every business has.
+decomposition:
+  volume: orders
+  value: aov            # revenue / orders, computed by the engine
+
+# Anomaly rules. These are the defaults the method was built around; tune per business.
+rules:
+  baseline_weeks: 8            # same-weekday baseline window (trailing N occurrences of this weekday)
+  z_threshold: 2.0             # robust z (median / MAD) that counts as a change
+  persistence_days: 3          # look-back window for the persistence test
+  persistence_min_hits: 2      # how many of those days must point the same way
+  min_signal_revenue: 500      # ignore anything smaller than this many currency units
+  unit_move_pct: 0.15          # a unit must move this much vs its own baseline...
+  unit_move_abs: 500           # ...and by at least this much to be a "mover"
+  channel_share_shift_pts: 2.0 # channel mix shift that gets flagged, in percentage points
+  yoy_move_pct: 0.10           # YoY move on revenue worth calling out
+  trend_weeks: 13              # how many weeks of history the brief shows
+
+# Diagnostic playbooks the brief points to when a flag fires.
+playbooks:
+  volume_drop: diagnostics/volume_drop.md
+  value_drop: diagnostics/value_drop.md
+  unit_drop: diagnostics/unit_drop.md
+  channel_shift: diagnostics/channel_shift.md
+  new_customer_drop: diagnostics/new_customer_drop.md
+  general: diagnostics/general.md

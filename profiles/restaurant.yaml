@@ -1,0 +1,49 @@
+# Restaurant / multi-unit profile. Extends generic with the things restaurant operators ask about:
+# stores, checks, dayparts, catering kept separate from the core business.
+
+profile: restaurant
+extends: generic
+
+vocabulary:
+  unit: store
+  units: stores
+  order: check
+  orders: checks
+  value: average check
+  value_short: Avg check
+
+# Extra dimension the restaurant config is expected to provide: a daypart derived from the
+# order hour. The engine reports daypart mix and daypart-level moves when it is present.
+extra_dimensions:
+  daypart:
+    required: false
+    # Default CASE expression; override in config if your dayparts differ. {hour} is replaced
+    # with config.columns.hour.
+    default_expr: >-
+      CASE WHEN {hour} < 11 THEN 'breakfast'
+           WHEN {hour} < 14 THEN 'lunch'
+           WHEN {hour} < 17 THEN 'afternoon'
+           ELSE 'dinner' END
+
+# Segments to exclude from the core numbers and report separately. Catering is lumpy and
+# will trip every anomaly rule if it is mixed in with walk-in business.
+segments:
+  exclude_from_core:
+    - name: catering
+      filter_key: is_catering     # config.filters.is_catering supplies the SQL predicate
+      report_separately: true
+
+rules:
+  min_signal_revenue: 500
+  unit_move_pct: 0.15
+  unit_move_abs: 500
+  daypart_move_pct: 0.05        # daypart move worth a line when the top line is flat
+
+playbooks:
+  volume_drop: diagnostics/volume_drop.md
+  value_drop: diagnostics/value_drop.md
+  unit_drop: diagnostics/unit_drop.md
+  channel_shift: diagnostics/channel_shift.md
+  new_customer_drop: diagnostics/new_customer_drop.md
+  daypart_shift: diagnostics/daypart_shift.md
+  general: diagnostics/general.md

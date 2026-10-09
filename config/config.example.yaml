@@ -1,0 +1,67 @@
+# Daily Review config: the only file you edit to point the review at your warehouse.
+#
+# The engine builds ONE query from this file:
+#
+#   SELECT CAST(<date> AS DATE) AS d, <unit> AS unit, <channel> AS channel, [<extra dims>...]
+#          <revenue> AS revenue, <orders> AS orders, [<optional measures>...]
+#   FROM   <source>
+#   WHERE  CAST(<date> AS DATE) BETWEEN DATE 'yyyy-mm-dd' AND DATE 'yyyy-mm-dd'
+#   GROUP  BY 1, 2, 3 [, ...]
+#
+# Every expression below is pasted into that query verbatim, so write them in your
+# warehouse's SQL. Measures must be aggregate expressions (SUM, COUNT, COUNT DISTINCT).
+# Everything else (baselines, z-scores, decomposition, persistence) happens in Python.
+
+business:
+  name: Acme Provisions          # appears in the brief header
+  currency: USD
+  timezone: America/Denver
+
+profile: generic                 # generic | restaurant | ecommerce (see profiles/)
+
+warehouse:
+  adapter: duckdb                # duckdb | bigquery | snowflake | postgres | redshift
+  # Adapter-specific connection settings. Credentials never go here: adapters read them
+  # from the environment (GOOGLE_APPLICATION_CREDENTIALS, SNOWFLAKE_PASSWORD, PGPASSWORD...).
+  duckdb:
+    path: sample/sample.duckdb
+  # bigquery:
+  #   project: my-gcp-project
+  # snowflake:
+  #   account: xy12345.us-east-1
+  #   user: REVIEW_BOT
+  #   warehouse: ANALYTICS_WH
+  #   database: ANALYTICS
+  #   schema: MARTS
+  # postgres:
+  #   dsn: postgresql://review_bot@db.internal:5432/analytics
+
+source: orders                   # a table, a view, or a parenthesised subquery
+
+columns:
+  date: order_ts                 # anything CAST-able to DATE
+  unit: unit_id                  # the thing you compare against itself: store, market, product line
+  channel: channel               # how the order arrived; set to a literal like "'all'" if you have none
+  hour: EXTRACT(HOUR FROM order_ts)   # only needed by profiles that derive dayparts
+
+measures:
+  revenue: SUM(net_sales)
+  orders: COUNT(DISTINCT order_id)
+  new_customers: SUM(CASE WHEN customer_order_number = 1 THEN 1 ELSE 0 END)
+  # sessions: SUM(sessions)      # ecommerce profile; only if your source has traffic
+
+filters:
+  # Optional predicates. Each is ANDed into the WHERE clause of the core query.
+  core:
+    - "order_status = 'completed'"
+  # Named segments referenced by profiles (e.g. restaurant.segments.exclude_from_core).
+  # is_catering: "is_catering = TRUE"
+
+# Override any profile rule here.
+rules:
+  min_signal_revenue: 500        # the top line must move by at least this much to be flagged
+  unit_move_abs: 250             # a unit must move by at least this much; scale to your unit size
+
+output:
+  dir: out                       # where briefs and JSON land
+  brief_format: markdown

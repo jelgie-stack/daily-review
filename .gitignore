@@ -1,0 +1,17 @@
+# generated
+out/
+sample/sample.duckdb
+sample/orders.csv
+*.duckdb.wal
+
+# local config with real table names
+config/config.yaml
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# os
+.DS_Store

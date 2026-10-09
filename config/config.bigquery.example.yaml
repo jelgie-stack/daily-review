@@ -1,0 +1,38 @@
+# BigQuery example. Auth comes from Application Default Credentials
+# (GOOGLE_APPLICATION_CREDENTIALS or `gcloud auth application-default login`).
+
+business:
+  name: Your Brand
+  currency: USD
+  timezone: America/New_York
+
+profile: restaurant
+
+warehouse:
+  adapter: bigquery
+  bigquery:
+    project: your-gcp-project
+    location: US
+
+# Fully qualified table or view. A subquery works too:
+# source: "(SELECT * FROM `proj.ds.orders` WHERE region = 'US')"
+source: "`your-gcp-project.marts.fct_orders`"
+
+columns:
+  date: business_date
+  unit: store_id
+  channel: order_channel
+  hour: EXTRACT(HOUR FROM order_datetime_local)
+
+measures:
+  revenue: SUM(net_sales)
+  orders: COUNT(DISTINCT order_id)
+  new_customers: COUNTIF(customer_order_count = 1)
+
+filters:
+  core:
+    - "is_test_store = FALSE"
+  is_catering: "is_catering"
+
+output:
+  dir: out
