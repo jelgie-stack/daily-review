@@ -55,6 +55,8 @@ def render(res: dict) -> str:
             sev = {"high": "🔴", "medium": "🟠", "low": "🟡", "info": "🟢"}.get(f["severity"], "•")
             pb = f" _Playbook: `{f['playbook']}`_" if f.get("playbook") else ""
             lines.append(f"- {sev} {f['text']}{pb}")
+            if f.get("context"):
+                lines.append(f"  - _Context: {f['context']}._")
         lines.append("")
     else:
         lines.append("## What needs attention")
@@ -112,11 +114,11 @@ def render(res: dict) -> str:
     if not um["down"] and not um["up"]:
         lines.append(f"No {voc['unit']} moved more than {int(res['rules'].get('unit_move_pct', .15)*100)}% against its own baseline.")
     else:
-        lines.append(f"| {voc['unit'].capitalize()} | Yesterday | Baseline | Change | Yesterday too? |")
-        lines.append("|---|---:|---:|---:|:---:|")
+        lines.append(f"| {voc['unit'].capitalize()} | Yesterday | Baseline | Change | Yesterday too? | Context |")
+        lines.append("|---|---:|---:|---:|:---:|---|")
         for m in um["down"] + um["up"]:
             yt = "yes" if m["persistent"] else ("no" if m["yesterday_pct"] is not None else "")
-            lines.append(f"| {m['unit']} | {_money(m['revenue'], cur)} | {_money(m['baseline'], cur)} | {_pct(m['pct'])} | {yt} |")
+            lines.append(f"| {m['unit']} | {_money(m['revenue'], cur)} | {_money(m['baseline'], cur)} | {_pct(m['pct'])} | {yt} | {m.get('context') or ''} |")
     lines.append("")
 
     # ---- mix
@@ -137,6 +139,28 @@ def render(res: dict) -> str:
         lines.append("")
         for name, s in res["segments"].items():
             lines.append(f"- **{name.capitalize()}:** {_money(s['revenue'], cur)} vs a typical {_money(s['baseline'], cur)} ({_pct(s['pct'])}). Kept out of the core numbers above.")
+        lines.append("")
+
+    # ---- context
+    c = res.get("context") or {}
+    if c.get("today") or c.get("yesterday"):
+        lines.append("## Context")
+        lines.append("")
+        lines.append("What else was true. Context explains flags; it never hides them.")
+        lines.append("")
+        for label, rows_ in (("Yesterday", c.get("today") or []), ("The day before", c.get("yesterday") or [])):
+            wx = [r for r in rows_ if r["kind"] == "weather"]
+            other = [r for r in rows_ if r["kind"] != "weather"]
+            for r in other:
+                scope = "" if r["scope"] == "all" else f" ({r['scope']})"
+                lines.append(f"- **{label}{scope}, {r['kind']}:** {r['note']}")
+            if wx:
+                lines.append(f"- **{label}, weather:** " + "; ".join(f"{r['scope']} {r['note']}" for r in wx[:8]) + (f"; +{len(wx)-8} more" if len(wx) > 8 else ""))
+        lines.append("")
+    elif c.get("weather_enabled"):
+        lines.append("## Context")
+        lines.append("")
+        lines.append("Nothing logged and no notable weather at any unit.")
         lines.append("")
 
     # ---- trend

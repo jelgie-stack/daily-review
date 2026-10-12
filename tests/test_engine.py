@@ -149,3 +149,47 @@ class HolidayTests(unittest.TestCase):
         res = analyze.analyze(rows, end, self._cal_cfg())
         self.assertEqual(res["yoy"]["ly_date"], "2025-07-04")
         self.assertEqual(res["yoy"]["aligned_by"], "holiday")
+
+
+class ContextTests(unittest.TestCase):
+    END = dt.date(2026, 10, 8)
+
+    def test_classify_thresholds(self):
+        from review.context import DEFAULT_THRESHOLDS, classify
+        self.assertEqual(classify({"precipitation_sum": 0.4, "temperature_2m_max": 20}, DEFAULT_THRESHOLDS, True), (None, ""))
+        sev, note = classify({"precipitation_sum": 12.0, "temperature_2m_max": 20}, DEFAULT_THRESHOLDS, True)
+        self.assertEqual(sev, "rain"); self.assertIn("in", note)
+        sev, _ = classify({"snowfall_sum": 4.0, "precipitation_sum": 30}, DEFAULT_THRESHOLDS, False)
+        self.assertEqual(sev, "snow")  # snow wins over rain
+
+    def test_open_meteo_parser_handles_real_payload_shape(self):
+        import json
+        from unittest import mock
+        from review import context
+        payload = {"daily": {"time": ["2026-10-07", "2026-10-08"], "precipitation_sum": [0.0, 16.8], "snowfall_sum": [0.0, 0.0],
+                             "temperature_2m_max": [28.6, 14.2], "temperature_2m_min": [12.0, 6.0], "windspeed_10m_max": [20.0, 31.0]}}
+
+        class R:
+            def __init__(self, b): self.b = b
+            def read(self): return self.b
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+
+        with mock.patch("urllib.request.urlopen", return_value=R(json.dumps(payload).encode())):
+            got = context.fetch_open_meteo(40.76, -111.89, dt.date(2026, 10, 7), dt.date(2026, 10, 8), "America/Denver")
+        self.assertEqual(sorted(got), ["2026-10-07", "2026-10-08"])
+        self.assertEqual(got["2026-10-08"]["precipitation_sum"], 16.8)
+
+    def test_context_attaches_but_never_suppresses(self):
+        rows = _rows(self.END, day_mult={0: .85, 1: .9}, unit_mult={("U2", 0): .5})
+        ctx = [{"date": "2026-10-07", "scope": "all", "kind": "promo", "note": "BOGO ended"},
+               {"date": "2026-10-08", "scope": "U2", "kind": "outage", "note": "closed until 2pm"},
+               {"date": "2026-10-08", "scope": "U0", "kind": "weather", "note": "rain 0.5 in", "severity": "rain"}]
+        res = analyze.analyze(rows, self.END, _cfg(min_signal_revenue=100, unit_move_abs=100), context_rows=ctx)
+        kinds = {f["kind"]: f for f in res["flags"]}
+        self.assertIn("volume_drop", kinds)                       # still flagged
+        self.assertIn("BOGO ended", kinds["volume_drop"]["context"])
+        self.assertIn("rain at 1 of 4", kinds["volume_drop"]["context"])
+        u2 = [m for m in res["unit_movers"]["down"] if m["unit"] == "U2"][0]
+        self.assertIn("closed until 2pm", u2["context"])
+        self.assertIn("Context:", res["verdict"])

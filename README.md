@@ -18,7 +18,9 @@ work the playbooks with whatever tools it has.
 - 🔴 Revenue is -6.4% vs the same-weekday baseline. Fewer checks cost -$1,681; a higher average check clawed back $847.  Playbook: diagnostics/volume_drop.md
 - 🟠 New customers are -35.0% vs baseline (133 vs a typical 204).  Playbook: diagnostics/new_customer_drop.md
 - 🔴 2 stores are off by 15%+ vs their own baseline (U07, U04). U07 was down yesterday too.  Playbook: diagnostics/unit_drop.md
+    Context: U07: hours: Reopened at 11am after cooler repair; U04: weather: rain 0.57 in.
 - 🟡 Channel mix moved: in-store is -2.7 pts of revenue share vs its usual 54%.  Playbook: diagnostics/channel_shift.md
+    Context: online outage: Checkout 502s 11:40 to 12:25 (payments vendor incident).
 ```
 
 Full sample output: [restaurant profile](sample/sample_brief.md) · [generic profile](sample/sample_brief_generic.md) · [a holiday](sample/sample_brief_holiday.md).
@@ -40,6 +42,9 @@ time, what a reader actually needs:
 5. **A holiday is not a bad weekday.** Baselines skip holidays, a holiday is compared to the
    same holiday last year (by rule, not by counting back 364 days), and the day after one
    never starts a "three-day slump".
+6. **Context explains flags; it never hides them.** A promo ending, an outage, reduced hours,
+   or notable weather at a unit is attached to the flag it explains. Internal events are a
+   CSV someone keeps; weather is an opt-in feed (Open-Meteo, free, per unit).
 
 [docs/method.md](docs/method.md) goes through each rule and why it is there.
 
@@ -103,6 +108,24 @@ A profile is a YAML file in [`profiles/`](profiles/); write your own by extendin
 The holiday calendar (`profiles/holidays.yaml`, US by default) is rule-based and extendable
 from `config.yaml`.
 
+## Context: events and weather
+
+```yaml
+context:
+  file: context.csv            # date,scope,kind,note   scope = all | <unit> | channel:<name>
+  rows:
+    - {date: 2026-10-07, scope: all, kind: promo, note: "Fall BOGO ended"}
+weather:
+  enabled: true                # leave off for a business that is not weather-sensitive
+  provider: open-meteo         # free, no key; or `file` for a CSV
+  locations_file: locations.csv   # unit,lat,lon
+```
+
+Internal events (a promo, an outage, reduced hours, a price change) explain more days than
+any external feed, and they only exist if someone writes them down, so that is a CSV. Weather
+is the one feed worth automating; it is fetched per unit and only notable days produce a row.
+Either way, context is attached to the flag it explains and never used to hide one.
+
 ## As a Claude skill
 
 [`SKILL.md`](SKILL.md) tells Claude when to run the review, how to run it (Python, or
@@ -132,7 +155,7 @@ wholesale) out of the core.
 
 ## Not included, on purpose
 
-Weather and event feeds, forecasting, and root-cause from data alone. The engine finds where and how
+External event feeds, a learned weather effect, forecasting, and root-cause from data alone. The engine finds where and how
 much; the playbooks are for a person, or an agent with tools, to find why.
 
 ## License

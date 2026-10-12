@@ -84,7 +84,39 @@ The default calendar is US (`profiles/holidays.yaml`), expressed as rules (fixed
 Thursday of November", Easter offsets) so it works for any year. Add your own holidays, local
 events, or a different country's calendar in `config.yaml` under `holidays:`.
 
-## 8. One verdict, then flags, then tables
+## 8. Context: what else was true
+
+A soft Tuesday with a cooler failure at one store, a promo that ended Monday, and rain at
+half the units is a different Tuesday from one with none of those. The sales data cannot
+tell you which it was. So the review keeps a second table, **context**: one row per
+(date, scope, kind, note), where scope is the whole business, a unit, or a channel.
+
+Rows come from three places, in order of value:
+
+1. **Internal events, written down by a person.** A promo starting or ending, an outage,
+   reduced hours, a price change, a competitor opening next door. These explain more days
+   than any external feed and exist nowhere except in someone's head or in chat, so the
+   format is deliberately trivial: a line in `config.yaml` or a row in a CSV.
+2. **Weather, fetched per unit (opt-in).** The one external feed worth automating, because
+   nobody will log it by hand and for foot-traffic businesses it is the largest unexplained
+   variable. Open-Meteo is free and needs no key; each unit needs a latitude and longitude.
+   Only *notable* weather produces a row (default: ≥ 5 mm rain, ≥ 1 cm snow, ≥ 35°C, ≤ -15°C,
+   ≥ 60 km/h wind), because the brief is not a weather report. A SaaS or ecommerce business
+   leaves it off.
+3. **An agent appending rows** from what it finds in email, chat, or the playbooks, tagged
+   with its source so a reader knows who said it.
+
+**Context annotates; it never suppresses.** A flag with context under it reads "revenue
+-9.5% … *Context: day before, promo: Fall BOGO ended; rain at 6 of 12 stores*". The flag
+stays. The day the engine starts hiding flags because it rained is the day a real problem
+hides behind a weather note. Holidays are the one exception, and they are handled
+separately (section 7) because they change the comparison rather than explain it.
+
+What this does not yet do is *quantify* the effect: "rain explains about two-thirds of
+today's gap." The data for that is already in the review (every day's deviation from its
+baseline, and which days had rain at which units), so it is the natural next step.
+
+## 9. One verdict, then flags, then tables
 
 The brief's first line is a sentence a chief executive can read without the rest. Then the
 flags, each with a playbook. Then the evidence, for anyone who wants it. The order is the
@@ -92,8 +124,11 @@ point: the reader who stops after one line still knows whether to worry.
 
 ## What it deliberately does not do
 
-- **No weather or event feed.** A rainy Tuesday looks like a soft Tuesday. The playbooks tell
-  the reader to check weather first; the engine does not.
+- **No external event feeds.** Concerts, sports, conventions: the ones that matter to a
+  business are better entered as context rows by someone who knows which ones matter than
+  pulled wholesale from an API.
+- **No learned weather effect yet.** Context says it rained; it does not yet say what rain
+  usually costs each unit. See section 8.
 - **No forecasting.** Baselines are descriptive. Forecasts belong somewhere else.
 - **No root cause from data alone.** The playbooks are checklists for a person (or an agent
   with tools). The engine finds the where and the how much; the why needs context.

@@ -1,13 +1,16 @@
 # Acme Provisions: Thursday Oct 8, 2026
 
-**Normal day: revenue -4.3% vs the same-weekday baseline, inside the usual range. The thing to look at is U07.**
+**Normal day: revenue -4.3% vs the same-weekday baseline, inside the usual range. The thing to look at is U07. Context: day before, promo: Fall BOGO ended; online outage: Checkout 502s 11:40 to 12:25 (payments vendor incident); weather: rain at 6 of 12 units.**
 
 ## What needs attention
 
 - 🟠 Orders are -12.7% vs baseline (z -5.5) and a higher average order value (+9.6%) is hiding it in revenue. Treat this as a volume problem. _Playbook: `diagnostics/volume_drop.md`_
+  - _Context: day before, promo: Fall BOGO ended; online outage: Checkout 502s 11:40 to 12:25 (payments vendor incident); weather: rain at 6 of 12 units._
 - 🟠 New customers are -34.6% vs baseline (134 vs a typical 205). _Playbook: `diagnostics/new_customer_drop.md`_
 - 🔴 3 units are off by 15%+ vs their own baseline (U07, U04, U10). U07 was down yesterday too. _Playbook: `diagnostics/unit_drop.md`_
+  - _Context: U07: hours: Reopened at 11am after cooler repair; U04: weather: rain 0.57 in._
 - 🟡 Channel mix moved: online is +2.6 pts of revenue share vs its usual 27%. _Playbook: `diagnostics/channel_shift.md`_
+  - _Context: online outage: Checkout 502s 11:40 to 12:25 (payments vendor incident)._
 
 ## Yesterday vs. the same weekday
 
@@ -29,13 +32,13 @@ Baseline = median of the trailing 8 Thursdays, skipping holidays. z = robust z-s
 
 ## Units that moved (12 reporting)
 
-| Unit | Yesterday | Baseline | Change | Yesterday too? |
-|---|---:|---:|---:|:---:|
-| U07 | $461 | $977 | -52.8% | yes |
-| U04 | $620 | $1,006 | -38.4% | no |
-| U10 | $1,093 | $1,361 | -19.7% | yes |
-| U02 | $1,510 | $997 | +51.5% | no |
-| U01 | $1,662 | $1,160 | +43.2% | no |
+| Unit | Yesterday | Baseline | Change | Yesterday too? | Context |
+|---|---:|---:|---:|:---:|---|
+| U07 | $461 | $977 | -52.8% | yes | hours: Reopened at 11am after cooler repair |
+| U04 | $620 | $1,006 | -38.4% | no | weather: rain 0.57 in |
+| U10 | $1,093 | $1,361 | -19.7% | yes |  |
+| U02 | $1,510 | $997 | +51.5% | no | weather: rain 0.39 in |
+| U01 | $1,662 | $1,160 | +43.2% | no | weather: rain 0.44 in |
 
 ## Channel mix
 
@@ -44,6 +47,16 @@ Baseline = median of the trailing 8 Thursdays, skipping holidays. z = robust z-s
 | in-store | $6,918 | -11.0% | 52% | 54% |
 | online | $3,928 | +4.0% | 29% | 27% |
 | delivery | $2,540 | -1.7% | 19% | 19% |
+
+## Context
+
+What else was true. Context explains flags; it never hides them.
+
+- **Yesterday (U07), hours:** Reopened at 11am after cooler repair
+- **Yesterday (channel:online), outage:** Checkout 502s 11:40 to 12:25 (payments vendor incident)
+- **Yesterday, weather:** U01 rain 0.44 in; U02 rain 0.39 in; U04 rain 0.57 in; U06 rain 0.28 in; U09 rain 0.25 in; U12 rain 0.47 in
+- **The day before, promo:** Fall BOGO ended
+- **The day before (U07), outage:** Walk-in cooler failed; closed 2pm to close
 
 ## 13-week trend (complete weeks)
 

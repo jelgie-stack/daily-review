@@ -27,13 +27,13 @@ Baseline = median of the trailing 8 Saturdays, skipping holidays. z = robust z-s
 
 ## Units that moved (12 reporting)
 
-| Unit | Yesterday | Baseline | Change | Yesterday too? |
-|---|---:|---:|---:|:---:|
-| U05 | $840 | $1,808 | -53.6% |  |
-| U06 | $740 | $1,592 | -53.5% |  |
-| U03 | $1,018 | $1,819 | -44.0% |  |
-| U01 | $861 | $1,621 | -46.9% |  |
-| U10 | $948 | $1,691 | -43.9% |  |
+| Unit | Yesterday | Baseline | Change | Yesterday too? | Context |
+|---|---:|---:|---:|:---:|---|
+| U05 | $840 | $1,808 | -53.6% |  |  |
+| U06 | $740 | $1,592 | -53.5% |  |  |
+| U03 | $1,018 | $1,819 | -44.0% |  |  |
+| U01 | $861 | $1,621 | -46.9% |  |  |
+| U10 | $948 | $1,691 | -43.9% |  |  |
 
 ## Channel mix
 
@@ -42,6 +42,10 @@ Baseline = median of the trailing 8 Saturdays, skipping holidays. z = robust z-s
 | in-store | $5,814 | -39.3% | 60% | 55% |
 | online | $2,230 | -48.8% | 23% | 25% |
 | delivery | $1,634 | -50.7% | 17% | 19% |
+
+## Context
+
+Nothing logged and no notable weather at any unit.
 
 ## 13-week trend (complete weeks)
 

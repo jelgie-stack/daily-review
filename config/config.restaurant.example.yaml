@@ -35,5 +35,25 @@ rules:
   min_signal_revenue: 500
   unit_move_abs: 150
 
+# Context: things that explain a day but are not in the sales data. Internal events (a promo
+# ending, an outage, reduced hours) are the valuable ones, and someone has to write them down.
+# Rows here, in a CSV, or both. scope = all | <unit id> | channel:<name>.
+context:
+  file: sample/context.csv
+  rows:
+    - {date: 2026-09-30, scope: all, kind: pricing, note: "Menu prices +3% across the board"}
+
+# Weather (opt-in; skip it for a business that is not weather-sensitive). One row per unit per
+# notable-weather day. provider: open-meteo (free, no key) needs a lat/lon per unit; provider:
+# file reads a CSV so the sample runs offline.
+weather:
+  enabled: true
+  provider: file
+  file: sample/weather.csv
+  units: imperial                # imperial | metric (display only)
+  # provider: open-meteo
+  # locations_file: sample/locations.csv
+  # thresholds: {rain_mm: 5, snow_cm: 1, heat_c: 35, cold_c: -15, wind_kmh: 60}
+
 output:
   dir: out

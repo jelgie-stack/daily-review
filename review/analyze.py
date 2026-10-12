@@ -12,6 +12,7 @@ from collections import defaultdict
 from typing import Any
 
 from . import stats
+from .context import Context
 from .holidays import Calendar
 
 Row = dict[str, Any]
@@ -77,6 +78,7 @@ def analyze(
     review_date: dt.date,
     cfg: dict,
     segment_rows: dict[str, list[Row]] | None = None,
+    context_rows: list[dict] | None = None,
 ) -> dict:
     rules = cfg["rules"]
     weeks = int(rules.get("baseline_weeks", 8))
@@ -88,6 +90,7 @@ def analyze(
     D = review_date
     cal = cfg.get("_calendar") or Calendar.load(cfg.get("holiday_calendar"), cfg.get("holidays"))
     hol = cal.lookup(D)  # (name, offset) or None
+    ctx = Context(context_rows or [])
 
     out: dict[str, Any] = {
         "review_date": D.isoformat(),
@@ -279,9 +282,45 @@ def analyze(
         base = _baseline_for(scube, D, "revenue", weeks, cal)
         out["segments"][name] = {"revenue": x, "baseline": base["median"], "pct": stats.pct_change(x, base["median"]), "z": stats.zscore(x, base)}
 
+    # ---- context: what else was true that day ---------------------------------------------
+    total_units = out["unit_movers"]["total_units"]
+    out["context"] = {
+        "today": [dict(r, date=r["date"].isoformat()) for r in ctx.on(D)],
+        "yesterday": [dict(r, date=r["date"].isoformat()) for r in ctx.on(D - dt.timedelta(days=1))],
+        "summary": ctx.summary(D, total_units, cfg["vocabulary"]),
+        "weather_enabled": bool(cfg.get("weather", {}).get("enabled")),
+    }
+    for m in out["unit_movers"]["down"] + out["unit_movers"]["up"]:
+        m["context"] = "; ".join(f"{r['kind']}: {r['note']}" if r["note"] else r["kind"] for r in ctx.on(D, m["unit"]))
+
     # ---- flags + verdict ----------------------------------------------------------------
     _flag(out, cfg, floor, z_thr)
+    _attach_context(out, ctx, D)
     return out
+
+
+def _attach_context(out: dict, ctx: Context, D: dt.date) -> None:
+    """Hang context off the flags it explains. It never removes a flag."""
+    summary = out["context"]["summary"]
+    attached = False
+    for f in out["flags"]:
+        if f["kind"] in ("volume_drop", "value_drop", "up", "conversion_drop") and summary and not attached:
+            f["context"] = summary
+            attached = True
+        elif f["kind"] == "channel_shift":
+            # the channel that moved most is named in the flag text; attach rows for any channel
+            ch_rows = [r for r in out["context"]["today"] if r["scope"].startswith("channel:")]
+            if ch_rows:
+                f["context"] = "; ".join(f"{r['scope'][8:]} {r['kind']}: {r['note']}" for r in ch_rows)
+        elif f["kind"] == "unit_drop":
+            bits = []
+            for m in out["unit_movers"]["down"][:3]:
+                if m.get("context"):
+                    bits.append(f"{m['unit']}: {m['context']}")
+            if bits:
+                f["context"] = "; ".join(bits)
+    if summary and out["flags"] and not out.get("holiday"):
+        out["verdict"] += f" Context: {summary}."
 
 
 def _flag(out: dict, cfg: dict, floor: float, z_thr: float) -> None:

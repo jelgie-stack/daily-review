@@ -1,0 +1,6 @@
+date,scope,kind,note,severity,source
+2026-10-01,all,promo,"Fall BOGO started (in-store and online)",,manual
+2026-10-07,all,promo,"Fall BOGO ended",,manual
+2026-10-07,U07,outage,"Walk-in cooler failed; closed 2pm to close",high,manual
+2026-10-08,U07,hours,"Reopened at 11am after cooler repair",medium,manual
+2026-10-08,channel:online,outage,"Checkout 502s 11:40 to 12:25 (payments vendor incident)",medium,manual

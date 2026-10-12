@@ -25,6 +25,8 @@ and every step below exists to enforce one of them:
 4. **Every flag comes with a next step.** Each flag names a playbook in `diagnostics/`.
 5. **A holiday is not a bad weekday.** Holidays leave the baselines, get compared to the same
    holiday last year, and never start a trend.
+6. **Context explains, never hides.** Promos, outages, hours, and notable weather attach to
+   the flags they explain. The flag stays.
 
 ## Setup (once per business)
 
@@ -60,6 +62,23 @@ The brief prints to stdout and lands in `out/YYYYMMDD-daily-review.md` with a JS
 
 Do not try to reproduce the statistics in your head. The baselines, z-scores and
 decomposition are the product; a brief without them is a guess.
+
+## Keeping context current
+
+The most useful thing the agent can do between reviews is keep `context.csv` honest. When
+you learn, from email, chat, a ticket, or the user, that something happened that would
+explain a day (a promotion started or ended, a store had reduced hours, checkout broke, a
+price changed, a competitor opened), append a row:
+
+```
+date,scope,kind,note,severity,source
+2026-10-08,channel:online,outage,"Checkout 502s 11:40 to 12:25",medium,agent:email
+```
+
+Scope is `all`, a unit id, or `channel:<name>`. Kind is one of `promo`, `outage`, `hours`,
+`pricing`, `event`, `competitor`, or a plain word. Always set `source` to where you got it
+(`agent:email`, `agent:slack`, `user`). Do not add rows you are guessing at: a wrong
+explanation is worse than none, because it stops someone looking.
 
 ## Delivering the brief
 

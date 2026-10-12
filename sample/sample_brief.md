@@ -1,13 +1,16 @@
 # Juniper Kitchen: Thursday Oct 8, 2026
 
-**Soft, and it is a trend: revenue -6.4% vs baseline today, and below baseline on 3 of the last 3 days.**
+**Soft, and it is a trend: revenue -6.4% vs baseline today, and below baseline on 3 of the last 3 days. Context: day before, promo: Fall BOGO ended; online outage: Checkout 502s 11:40 to 12:25 (payments vendor incident); weather: rain at 6 of 12 stores.**
 
 ## What needs attention
 
 - 🔴 Revenue is -6.4% vs the same-weekday baseline. Fewer checks cost -$1,681; a higher average check clawed back $847. _Playbook: `diagnostics/volume_drop.md`_
+  - _Context: day before, promo: Fall BOGO ended; online outage: Checkout 502s 11:40 to 12:25 (payments vendor incident); weather: rain at 6 of 12 stores._
 - 🟠 New customers are -35.0% vs baseline (133 vs a typical 204). _Playbook: `diagnostics/new_customer_drop.md`_
 - 🔴 2 stores are off by 15%+ vs their own baseline (U07, U04). U07 was down yesterday too. _Playbook: `diagnostics/unit_drop.md`_
+  - _Context: U07: hours: Reopened at 11am after cooler repair; U04: weather: rain 0.57 in._
 - 🟡 Channel mix moved: in-store is -2.7 pts of revenue share vs its usual 54%. _Playbook: `diagnostics/channel_shift.md`_
+  - _Context: online outage: Checkout 502s 11:40 to 12:25 (payments vendor incident)._
 - 🟡 Daypart mix moved: lunch is +2.7 pts of revenue share vs its usual 38%. _Playbook: `diagnostics/daypart_shift.md`_
 
 ## Yesterday vs. the same weekday
@@ -30,10 +33,10 @@ Baseline = median of the trailing 8 Thursdays, skipping holidays. z = robust z-s
 
 ## Stores that moved (12 reporting)
 
-| Store | Yesterday | Baseline | Change | Yesterday too? |
-|---|---:|---:|---:|:---:|
-| U07 | $461 | $854 | -46.0% | yes |
-| U04 | $620 | $934 | -33.6% | no |
+| Store | Yesterday | Baseline | Change | Yesterday too? | Context |
+|---|---:|---:|---:|:---:|---|
+| U07 | $461 | $854 | -46.0% | yes | hours: Reopened at 11am after cooler repair |
+| U04 | $620 | $934 | -33.6% | no | weather: rain 0.57 in |
 
 ## Channel mix
 
@@ -55,6 +58,16 @@ Baseline = median of the trailing 8 Thursdays, skipping holidays. z = robust z-s
 ## Reported separately
 
 - **Catering:** $1,211 vs a typical $816 (+48.5%). Kept out of the core numbers above.
+
+## Context
+
+What else was true. Context explains flags; it never hides them.
+
+- **Yesterday (U07), hours:** Reopened at 11am after cooler repair
+- **Yesterday (channel:online), outage:** Checkout 502s 11:40 to 12:25 (payments vendor incident)
+- **Yesterday, weather:** U01 rain 0.44 in; U02 rain 0.39 in; U04 rain 0.57 in; U06 rain 0.28 in; U09 rain 0.25 in; U12 rain 0.47 in
+- **The day before, promo:** Fall BOGO ended
+- **The day before (U07), outage:** Walk-in cooler failed; closed 2pm to close
 
 ## 13-week trend (complete weeks)
 

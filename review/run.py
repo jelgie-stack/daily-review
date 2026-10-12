@@ -16,7 +16,7 @@ from pathlib import Path
 
 from adapters import get_adapter
 
-from . import analyze, brief, query
+from . import analyze, brief, context, query
 from .config import load_config
 
 LOOKBACK_DAYS = 371  # 53 weeks: enough for a 13-week trend with a YoY comparison
@@ -69,7 +69,19 @@ def main(argv=None) -> int:
         print("The core query returned no rows. Check config.source and the date column.", file=sys.stderr)
         return 2
 
-    res = analyze.analyze(rows, review_date, cfg, seg_rows)
+    # Context rows: manual (config / CSV) plus weather if enabled. Failures here must never
+    # stop the review: a weather API being down is not a reason to skip the numbers.
+    base_dir = Path(cfg["_config_path"]).resolve().parent.parent
+    ctx_rows = context.load_manual(cfg, base_dir)
+    ctx_warn = None
+    try:
+        ctx_rows += context.load_weather(cfg, review_date - dt.timedelta(days=LOOKBACK_DAYS), review_date, base_dir)
+    except Exception as e:  # noqa: BLE001
+        ctx_warn = f"Weather context unavailable ({type(e).__name__}: {e}). The review ran without it."
+
+    res = analyze.analyze(rows, review_date, cfg, seg_rows, context_rows=ctx_rows)
+    if ctx_warn:
+        res["warnings"].append(ctx_warn)
     md = brief.render(res)
 
     out_dir = Path(cfg["output"].get("dir", "out"))
