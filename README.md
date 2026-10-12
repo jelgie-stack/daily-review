@@ -18,7 +18,7 @@ work the playbooks with whatever tools it has.
 - 🔴 Revenue is -6.4% vs the same-weekday baseline. Fewer checks cost -$1,681; a higher average check clawed back $847.  Playbook: diagnostics/volume_drop.md
 - 🟠 New customers are -35.0% vs baseline (133 vs a typical 204).  Playbook: diagnostics/new_customer_drop.md
 - 🔴 2 stores are off by 15%+ vs their own baseline (U07, U04). U07 was down yesterday too.  Playbook: diagnostics/unit_drop.md
-    Context: U07: hours: Reopened at 11am after cooler repair; U04: weather: rain 0.57 in.
+    Context: U07: hours: Reduced menu all day while the walk-in cooler was repaired; U04: weather: rain 0.57 in.
 - 🟡 Channel mix moved: in-store is -2.7 pts of revenue share vs its usual 54%.  Playbook: diagnostics/channel_shift.md
     Context: online outage: Checkout 502s 11:40 to 12:25 (payments vendor incident).
 ```
