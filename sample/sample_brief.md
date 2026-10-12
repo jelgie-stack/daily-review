@@ -8,7 +8,7 @@
   - _Context: day before, promo: Fall BOGO ended; online outage: Checkout 502s 11:40 to 12:25 (payments vendor incident); weather: rain at 6 of 12 stores._
 - 🟠 New customers are -35.0% vs baseline (133 vs a typical 204). _Playbook: `diagnostics/new_customer_drop.md`_
 - 🔴 2 stores are off by 15%+ vs their own baseline (U07, U04). U07 was down yesterday too. _Playbook: `diagnostics/unit_drop.md`_
-  - _Context: U07: hours: Reduced menu all day while the walk-in cooler was repaired; U04: weather: rain 0.57 in._
+  - _Context: U07: hours: Partial closure all day for an equipment repair; U04: weather: rain 0.57 in._
 - 🟡 Channel mix moved: in-store is -2.7 pts of revenue share vs its usual 54%. _Playbook: `diagnostics/channel_shift.md`_
   - _Context: online outage: Checkout 502s 11:40 to 12:25 (payments vendor incident)._
 - 🟡 Daypart mix moved: lunch is +2.7 pts of revenue share vs its usual 38%. _Playbook: `diagnostics/daypart_shift.md`_
@@ -35,7 +35,7 @@ Baseline = median of the trailing 8 Thursdays, skipping holidays. z = robust z-s
 
 | Store | Yesterday | Baseline | Change | Yesterday too? | Context |
 |---|---:|---:|---:|:---:|---|
-| U07 | $461 | $854 | -46.0% | yes | hours: Reduced menu all day while the walk-in cooler was repaired |
+| U07 | $461 | $854 | -46.0% | yes | hours: Partial closure all day for an equipment repair |
 | U04 | $620 | $934 | -33.6% | no | weather: rain 0.57 in |
 
 ## Channel mix
@@ -63,7 +63,7 @@ Baseline = median of the trailing 8 Thursdays, skipping holidays. z = robust z-s
 
 What else was true. Context explains flags; it never hides them.
 
-- **Yesterday (U07), hours:** Reduced menu all day while the walk-in cooler was repaired
+- **Yesterday (U07), hours:** Partial closure all day for an equipment repair
 - **Yesterday (channel:online), outage:** Checkout 502s 11:40 to 12:25 (payments vendor incident)
 - **Yesterday, weather:** U01 rain 0.44 in; U02 rain 0.39 in; U04 rain 0.57 in; U06 rain 0.28 in; U09 rain 0.25 in; U12 rain 0.47 in
 - **The day before, promo:** Fall BOGO ended
