@@ -89,7 +89,8 @@ connector and tell the user the statistics could not be computed. Do not improvi
 Paste the whole brief into chat, verdict first. Then the one thing you would do today, in a
 sentence, with the owner if there is one. Then the file path. Sample output to match:
 [restaurant](sample/sample_brief.md) · [generic](sample/sample_brief_generic.md) ·
-[holiday](sample/sample_brief_holiday.md).
+[holiday](sample/sample_brief_holiday.md). If the user asked for it to be sent somewhere, say
+what the send tool actually did (sent, drafted, or blocked by the hook), not what you intended.
 
 ## Your judgment
 
