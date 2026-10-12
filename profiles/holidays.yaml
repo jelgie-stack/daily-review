@@ -1,0 +1,26 @@
+# Default holiday calendar (United States). Dates listed here are excluded from same-weekday
+# baselines, and a review day that falls on one is compared to the same holiday last year.
+#
+# Add your own in config.yaml under `holidays:` (same shape), or point `holiday_calendar:` at a
+# different file for another country. `around` marks neighbours that are also not normal days:
+# the day before Thanksgiving is not a normal Wednesday either.
+
+holidays:
+  - {name: New Year's Day,      rule: fixed, month: 1,  day: 1,  observed: true, around: [-1]}
+  - {name: MLK Day,             rule: nth_weekday, month: 1,  weekday: 0, n: 3}
+  - {name: Presidents' Day,     rule: nth_weekday, month: 2,  weekday: 0, n: 3}
+  - {name: Valentine's Day,     rule: fixed, month: 2,  day: 14}
+  - {name: Good Friday,         rule: easter, offset: -2}
+  - {name: Easter,              rule: easter, offset: 0}
+  - {name: Mother's Day,        rule: nth_weekday, month: 5,  weekday: 6, n: 2}
+  - {name: Memorial Day,        rule: nth_weekday, month: 5,  weekday: 0, n: -1, around: [-1]}
+  - {name: Father's Day,        rule: nth_weekday, month: 6,  weekday: 6, n: 3}
+  - {name: Juneteenth,          rule: fixed, month: 6,  day: 19, observed: true}
+  - {name: Independence Day,    rule: fixed, month: 7,  day: 4,  observed: true, around: [-1]}
+  - {name: Labor Day,           rule: nth_weekday, month: 9,  weekday: 0, n: 1, around: [-1]}
+  - {name: Halloween,           rule: fixed, month: 10, day: 31}
+  - {name: Veterans Day,        rule: fixed, month: 11, day: 11, observed: true}
+  - {name: Thanksgiving,        rule: nth_weekday, month: 11, weekday: 3, n: 4, around: [-1, 1]}
+  - {name: Christmas Eve,       rule: fixed, month: 12, day: 24}
+  - {name: Christmas Day,       rule: fixed, month: 12, day: 25, observed: true, around: [1]}
+  - {name: New Year's Eve,      rule: fixed, month: 12, day: 31}

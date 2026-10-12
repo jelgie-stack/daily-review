@@ -103,3 +103,49 @@ class AnalyzeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HolidayTests(unittest.TestCase):
+    """Thanksgiving 2026 is Nov 26; 2025 was Nov 27. Independence Day 2026 is a Saturday."""
+
+    def _cal_cfg(self, **rules):
+        from review.holidays import Calendar
+        c = _cfg(min_signal_revenue=100, unit_move_abs=100, **rules)
+        c["_calendar"] = Calendar.load()
+        return c
+
+    def test_calendar_rules(self):
+        from review.holidays import Calendar
+        c = Calendar.load()
+        self.assertEqual(c.lookup(dt.date(2026, 11, 26)), ("Thanksgiving", 0))
+        self.assertEqual(c.same_holiday_last_year(dt.date(2026, 11, 26)), dt.date(2025, 11, 27))
+        self.assertEqual(c.same_holiday_last_year(dt.date(2026, 7, 4)), dt.date(2025, 7, 4))
+        self.assertEqual(c.lookup(dt.date(2026, 4, 5)), ("Easter", 0))
+        self.assertIsNone(c.lookup(dt.date(2026, 10, 8)))
+
+    def test_holiday_day_compares_to_same_holiday_last_year(self):
+        end = dt.date(2026, 11, 26)
+        rows = _rows(end, days=400, day_mult={0: .2, 364: .25})  # both Thanksgivings at ~20%
+        res = analyze.analyze(rows, end, self._cal_cfg())
+        self.assertEqual(res["holiday"]["name"], "Thanksgiving")
+        self.assertEqual(res["holiday"]["ly_date"], "2025-11-27")
+        self.assertTrue(res["verdict"].startswith("Thanksgiving"))
+        self.assertTrue(res["persistence"]["suspended"])
+        kinds = [f["kind"] for f in res["flags"]]
+        self.assertNotIn("volume_drop", kinds)   # an 80% drop on a holiday is not a volume drop
+        self.assertNotIn("unit_drop", kinds)
+
+    def test_baseline_skips_holidays(self):
+        # Review a normal Thursday two weeks after Thanksgiving: the holiday must not be in its baseline.
+        end = dt.date(2026, 12, 10)
+        rows = _rows(end, days=200, day_mult={14: .2})  # Nov 26 at 20%
+        res = analyze.analyze(rows, end, self._cal_cfg())
+        self.assertEqual(res["flags"], [], res["flags"])
+        self.assertTrue(res["verdict"].startswith("Normal day"))
+
+    def test_fixed_date_holiday_yoy_aligns_to_date_not_364_days(self):
+        end = dt.date(2026, 7, 4)
+        rows = _rows(end, days=400, day_mult={0: .6, 365: .6})  # July 4 both years at 60%
+        res = analyze.analyze(rows, end, self._cal_cfg())
+        self.assertEqual(res["yoy"]["ly_date"], "2025-07-04")
+        self.assertEqual(res["yoy"]["aligned_by"], "holiday")

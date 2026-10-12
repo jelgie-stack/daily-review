@@ -23,6 +23,8 @@ and every step below exists to enforce one of them:
    matter (a currency floor), and, to be called a trend, pointing the same way on 2 of the last
    3 days.
 4. **Every flag comes with a next step.** Each flag names a playbook in `diagnostics/`.
+5. **A holiday is not a bad weekday.** Holidays leave the baselines, get compared to the same
+   holiday last year, and never start a trend.
 
 ## Setup (once per business)
 
@@ -76,9 +78,9 @@ decomposition are the product; a brief without them is a guess.
   segment to `segments.exclude_from_core` via the profile and give it a filter.
 - **Nothing is ever flagged.** The floors are too high, or `baseline_weeks` spans a period
   with a step change (new stores, a price increase). Shorten the baseline.
-- **A holiday looks like a disaster.** The method compares to the same weekday, not the same
-  holiday. Note it in the brief as a known cause and move on; a holiday calendar is on the
-  roadmap, not in the engine.
+- **A holiday looks like a disaster.** It should not: the calendar in `profiles/holidays.yaml`
+  switches a holiday to a same-holiday-last-year comparison and keeps holidays out of
+  baselines. If a local holiday or event is missing, add it under `holidays:` in config.
 
 ## Files
 

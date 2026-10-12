@@ -56,6 +56,8 @@ def load_config(path: str | Path) -> dict:
         "measures": cfg.get("measures", {}),
         "filters": cfg.get("filters", {}),
         "output": cfg.get("output", {"dir": "out"}),
+        "holiday_calendar": cfg.get("holiday_calendar"),
+        "holidays": cfg.get("holidays", []),
         "_config_path": str(path),
     }
     validate(merged)

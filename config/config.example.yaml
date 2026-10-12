@@ -60,7 +60,13 @@ filters:
 # Override any profile rule here.
 rules:
   min_signal_revenue: 500        # the top line must move by at least this much to be flagged
-  unit_move_abs: 250             # a unit must move by at least this much; scale to your unit size
+  unit_move_abs: 150             # a unit must move by at least this much; ~15% of a typical unit-day
+
+# Holidays. The default calendar is profiles/holidays.yaml (US). Add your own here in the same
+# shape, or point holiday_calendar at another file.
+# holiday_calendar: profiles/holidays.yaml
+holidays:
+  - {name: Company Anniversary Sale, rule: fixed, month: 3, day: 15}
 
 output:
   dir: out                       # where briefs and JSON land

@@ -40,6 +40,10 @@ def render(res: dict) -> str:
         lines.append("> **No data.** " + " ".join(res["warnings"]))
         return "\n".join(lines) + "\n"
 
+    hol = res.get("holiday")
+    if hol:
+        lines.append(f"_Calendar: {hol['label']}._")
+        lines.append("")
     lines.append(f"**{res['verdict']}**")
     lines.append("")
 
@@ -62,7 +66,7 @@ def render(res: dict) -> str:
     h = res["headline"]
     lines.append("## Yesterday vs. the same weekday")
     lines.append("")
-    lines.append(f"Baseline = median of the trailing {h['revenue']['baseline_n']} {res['weekday']}s. z = robust z-score; |z| ≥ {res['rules'].get('z_threshold', 2)} counts as a real move.")
+    lines.append(f"Baseline = median of the trailing {h['revenue']['baseline_n']} {res['weekday']}s, skipping holidays. z = robust z-score; |z| ≥ {res['rules'].get('z_threshold', 2)} counts as a real move.")
     lines.append("")
     lines.append("| Measure | Yesterday | Baseline | Change | z |")
     lines.append("|---|---:|---:|---:|---:|")
@@ -86,14 +90,19 @@ def render(res: dict) -> str:
 
     # ---- persistence, wtd, yoy
     p = res["persistence"]
-    zs = ", ".join(f"{e['date'][5:]}: {e['z']:+.1f}" for e in p["window"] if e["z"] is not None)
-    lines.append(f"**Run check:** revenue z over the last {p['days']} days ({zs}). " + ("Same direction on enough days to call it a trend." if p["persistent"] else "Not enough days pointing the same way to call it a trend."))
+    zs = ", ".join((f"{e['date'][5:]}: {e['z']:+.1f}" if e["z"] is not None else f"{e['date'][5:]}: {e.get('holiday') or 'n/a'}") for e in p["window"])
+    if p.get("suspended"):
+        lines.append(f"**Run check:** suspended on a holiday ({zs}). A holiday never starts or extends a trend.")
+    else:
+        lines.append(f"**Run check:** revenue z over the last {p['days']} days ({zs}). " + ("Same direction on enough days to call it a trend." if p["persistent"] else "Not enough days pointing the same way to call it a trend."))
     lines.append("")
     w = res["wtd"]
     lines.append(f"**Week to date ({w['days']} day{'s' if w['days'] != 1 else ''}):** {_money(w['revenue'], cur)}, {_pct(w['pct_vs_last_week'])} vs the same days last week; typical for these days is {_money(w['median_prior_4'], cur)}.")
     if res.get("yoy"):
         y = res["yoy"]
-        lines.append(f"**Year over year:** {_pct(y['day_pct'])} vs the same weekday last year; trailing 7 days {_pct(y['trailing7_pct'])}.")
+        how = "the same holiday last year" if y.get("aligned_by") == "holiday" else "the same weekday last year"
+        notes = " ".join(n for n in (y.get("note"), y.get("trailing7_note")) if n)
+        lines.append(f"**Year over year:** {_pct(y['day_pct'])} vs {how} ({y['ly_date']}); trailing 7 days {_pct(y['trailing7_pct'])}." + (f" _{notes}_" if notes else ""))
     lines.append("")
 
     # ---- units
@@ -134,13 +143,14 @@ def render(res: dict) -> str:
     lines.append(f"## {len(res['trend'])}-week trend (complete weeks)")
     lines.append("")
     has_ly = any(t["ly_revenue"] for t in res["trend"])
-    lines.append("| Week ending | Revenue | YoY |  |" if has_ly else "| Week ending | Revenue |")
-    lines.append("|---|---:|---:|---|" if has_ly else "|---|---:|")
+    lines.append("| Week ending | Revenue | YoY |  | Holidays |" if has_ly else "| Week ending | Revenue | Holidays |")
+    lines.append("|---|---:|---:|---|---|" if has_ly else "|---|---:|---|")
     for t in res["trend"]:
+        hs = ", ".join(t.get("holidays") or [])
         if has_ly:
-            lines.append(f"| {t['week_ending']} | {_money(t['revenue'], cur)} | {_pct(t['yoy_pct'])} | {_bar(t['yoy_pct'])} |")
+            lines.append(f"| {t['week_ending']} | {_money(t['revenue'], cur)} | {_pct(t['yoy_pct'])} | {_bar(t['yoy_pct'])} | {hs} |")
         else:
-            lines.append(f"| {t['week_ending']} | {_money(t['revenue'], cur)} |")
+            lines.append(f"| {t['week_ending']} | {_money(t['revenue'], cur)} | {hs} |")
     lines.append("")
 
     if res["warnings"]:

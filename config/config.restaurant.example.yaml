@@ -33,7 +33,7 @@ filters:
 
 rules:
   min_signal_revenue: 500
-  unit_move_abs: 250
+  unit_move_abs: 150
 
 output:
   dir: out

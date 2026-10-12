@@ -11,17 +11,17 @@ work the playbooks with whatever tools it has.
 ```
 # Juniper Kitchen: Thursday Oct 8, 2026
 
-**Soft, and it is a trend: revenue -9.5% vs baseline today, and below baseline on 2 of the last 3 days.**
+**Soft, and it is a trend: revenue -6.4% vs baseline today, and below baseline on 2 of the last 3 days.**
 
 ## What needs attention
 
-- 🔴 Revenue is -9.5% vs the same-weekday baseline. Fewer checks cost -$1,885; a higher average check clawed back $651.  Playbook: diagnostics/volume_drop.md
-- 🟠 New customers are -38.2% vs baseline (126 vs a typical 204).  Playbook: diagnostics/new_customer_drop.md
-- 🔴 1 store is off by 15%+ vs its own baseline (U07). U07 was down yesterday too.  Playbook: diagnostics/unit_drop.md
-- 🟡 Channel mix moved: in-store is -5.8 pts of revenue share vs its usual 55%.  Playbook: diagnostics/channel_shift.md
+- 🔴 Revenue is -6.4% vs the same-weekday baseline. Fewer checks cost -$1,681; a higher average check clawed back $847.  Playbook: diagnostics/volume_drop.md
+- 🟠 New customers are -35.0% vs baseline (133 vs a typical 204).  Playbook: diagnostics/new_customer_drop.md
+- 🔴 2 stores are off by 15%+ vs their own baseline (U07, U04). U07 was down yesterday too.  Playbook: diagnostics/unit_drop.md
+- 🟡 Channel mix moved: in-store is -2.7 pts of revenue share vs its usual 54%.  Playbook: diagnostics/channel_shift.md
 ```
 
-Full sample output: [restaurant profile](sample/sample_brief.md) · [generic profile](sample/sample_brief_generic.md).
+Full sample output: [restaurant profile](sample/sample_brief.md) · [generic profile](sample/sample_brief_generic.md) · [a holiday](sample/sample_brief_holiday.md).
 
 ## Why this exists
 
@@ -37,6 +37,9 @@ time, what a reader actually needs:
    enough to act on (a currency floor), and, to be called a trend, pointing the same way on 2
    of the last 3 days.
 4. **Every flag has a next step.** Flags point at playbooks in [`diagnostics/`](diagnostics/).
+5. **A holiday is not a bad weekday.** Baselines skip holidays, a holiday is compared to the
+   same holiday last year (by rule, not by counting back 364 days), and the day after one
+   never starts a "three-day slump".
 
 [docs/method.md](docs/method.md) goes through each rule and why it is there.
 
@@ -97,6 +100,8 @@ dimensions, and which segments to keep out of the core numbers:
 | `ecommerce` | market | sessions and conversion (orders = sessions × CVR) |
 
 A profile is a YAML file in [`profiles/`](profiles/); write your own by extending `generic`.
+The holiday calendar (`profiles/holidays.yaml`, US by default) is rule-based and extendable
+from `config.yaml`.
 
 ## As a Claude skill
 
@@ -127,7 +132,7 @@ wholesale) out of the core.
 
 ## Not included, on purpose
 
-A holiday calendar, forecasting, and root-cause from data alone. The engine finds where and how
+Weather and event feeds, forecasting, and root-cause from data alone. The engine finds where and how
 much; the playbooks are for a person, or an agent with tools, to find why.
 
 ## License

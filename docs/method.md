@@ -66,7 +66,25 @@ Catering, wholesale, B2B, events: one large order looks like a 30% day for a sma
 restaurant profile moves catering out of the core numbers and reports it on its own line.
 Any profile can declare such a segment; it only needs a SQL predicate in `config.filters`.
 
-## 7. One verdict, then flags, then tables
+## 7. Holidays
+
+A holiday is not a bad weekday, and the day after one is not a recovery. Three things happen:
+
+- **Baselines skip holidays.** The same-weekday window drops any date that is a holiday or a
+  marked neighbour (the day before Thanksgiving, the day after Christmas) and reaches further
+  back to keep eight clean observations. Without this, the eight Thursdays after Thanksgiving
+  all carry a 20% day in their baseline and read as strong.
+- **A holiday is compared to the same holiday last year**, matched by rule rather than by
+  counting back 364 days. That distinction matters for fixed-date holidays: 364 days before
+  July 4, 2026 (a Saturday) is July 5, 2025. The trend check is suspended on holidays, so a
+  holiday never starts or extends a "three-day slump".
+- **Holiday weeks are marked in the trend table**, so a dip in the 13-week view explains itself.
+
+The default calendar is US (`profiles/holidays.yaml`), expressed as rules (fixed dates, "4th
+Thursday of November", Easter offsets) so it works for any year. Add your own holidays, local
+events, or a different country's calendar in `config.yaml` under `holidays:`.
+
+## 8. One verdict, then flags, then tables
 
 The brief's first line is a sentence a chief executive can read without the rest. Then the
 flags, each with a playbook. Then the evidence, for anyone who wants it. The order is the
@@ -74,8 +92,8 @@ point: the reader who stops after one line still knows whether to worry.
 
 ## What it deliberately does not do
 
-- **No holiday calendar.** A holiday compared to normal weekdays looks like an anomaly, and
-  the brief says so rather than guessing. A calendar is a natural extension.
+- **No weather or event feed.** A rainy Tuesday looks like a soft Tuesday. The playbooks tell
+  the reader to check weather first; the engine does not.
 - **No forecasting.** Baselines are descriptive. Forecasts belong somewhere else.
 - **No root cause from data alone.** The playbooks are checklists for a person (or an agent
   with tools). The engine finds the where and the how much; the why needs context.

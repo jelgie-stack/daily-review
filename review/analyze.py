@@ -12,6 +12,7 @@ from collections import defaultdict
 from typing import Any
 
 from . import stats
+from .holidays import Calendar
 
 Row = dict[str, Any]
 
@@ -62,9 +63,13 @@ class Cube:
         return sorted(ks)
 
 
-def _baseline_for(cube: Cube, day: dt.date, m: str, weeks: int) -> dict:
-    vals = [cube.total(d, m) for d in stats.same_weekday_dates(day, weeks) if cube.has(d)]
-    return stats.robust_baseline(vals)
+def _base_days(cube: Cube, day: dt.date, weeks: int, cal: Calendar) -> list[dt.date]:
+    """Trailing same-weekday dates with data, skipping holidays (and their marked neighbours)."""
+    return cal.clean_same_weekday(day, weeks, cube.has)
+
+
+def _baseline_for(cube: Cube, day: dt.date, m: str, weeks: int, cal: Calendar) -> dict:
+    return stats.robust_baseline([cube.total(d, m) for d in _base_days(cube, day, weeks, cal)])
 
 
 def analyze(
@@ -81,6 +86,8 @@ def analyze(
     dims = ["unit", "channel"] + [d for d in cfg.get("extra_dimensions", {}) if any(d in r for r in rows[:1])]
     cube = Cube(rows, measures, dims)
     D = review_date
+    cal = cfg.get("_calendar") or Calendar.load(cfg.get("holiday_calendar"), cfg.get("holidays"))
+    hol = cal.lookup(D)  # (name, offset) or None
 
     out: dict[str, Any] = {
         "review_date": D.isoformat(),
@@ -91,7 +98,12 @@ def analyze(
         "rules": rules,
         "flags": [],
         "warnings": [],
+        "holiday": None,
     }
+    if hol:
+        name, off = hol
+        label = name if off == 0 else (f"day before {name}" if off < 0 else f"day after {name}")
+        out["holiday"] = {"name": name, "offset": off, "label": label, "is_anchor": off == 0}
 
     # ---- data presence -------------------------------------------------------------------
     if not cube.has(D):
@@ -107,7 +119,7 @@ def analyze(
     head = {}
     for m in measures:
         x = cube.total(D, m)
-        base = _baseline_for(cube, D, m, weeks)
+        base = _baseline_for(cube, D, m, weeks, cal)
         head[m] = {
             "value": x,
             "baseline": base["median"],
@@ -129,6 +141,22 @@ def analyze(
             "base_cvr": (o["baseline"] / s["baseline"]) if s["baseline"] else None,
         }
 
+    # ---- holiday: compare to the same holiday last year, not to normal weekdays ------------
+    if hol:
+        ly_h = cal.same_holiday_last_year(D)
+        if ly_h and cube.has(ly_h):
+            out["holiday"].update({
+                "ly_date": ly_h.isoformat(),
+                "ly_weekday": ly_h.strftime("%A"),
+                "ly_revenue": cube.total(ly_h, "revenue"),
+                "ly_orders": cube.total(ly_h, "orders"),
+                "pct_vs_ly": stats.pct_change(rev["value"], cube.total(ly_h, "revenue")),
+                "orders_pct_vs_ly": stats.pct_change(orders["value"], cube.total(ly_h, "orders")),
+            })
+        else:
+            out["holiday"]["ly_date"] = ly_h.isoformat() if ly_h else None
+            out["warnings"].append(f"{D.isoformat()} is {out['holiday']['label']} and there is no data for the same holiday last year, so the only comparison available is to normal {out['weekday']}s. Read the numbers with that in mind.")
+
     # ---- persistence: is today's move part of a run? ------------------------------------
     p_days = int(rules.get("persistence_days", 3))
     p_hits = int(rules.get("persistence_min_hits", 2))
@@ -137,12 +165,15 @@ def analyze(
         d = D - dt.timedelta(days=k)
         if not cube.has(d):
             continue
-        zs.append({"date": d.isoformat(), "z": stats.zscore(cube.total(d, "revenue"), _baseline_for(cube, d, "revenue", weeks))})
+        h = cal.lookup(d)
+        zs.append({"date": d.isoformat(), "holiday": h[0] if h else None,
+                   "z": None if h else stats.zscore(cube.total(d, "revenue"), _baseline_for(cube, d, "revenue", weeks, cal))})
     today_z = rev["z"] or 0.0
     sign = 1 if today_z > 0 else -1
     same_way = sum(1 for e in zs if e["z"] is not None and e["z"] * sign >= 1.0)
-    persistent = abs(today_z) >= z_thr and same_way >= p_hits
-    out["persistence"] = {"window": zs, "persistent": persistent, "min_hits": p_hits, "hits": same_way, "days": p_days}
+    persistent = (not hol) and abs(today_z) >= z_thr and same_way >= p_hits
+    out["persistence"] = {"window": zs, "persistent": persistent, "min_hits": p_hits, "hits": same_way, "days": p_days,
+                          "suspended": bool(hol)}
 
     # ---- week to date -------------------------------------------------------------------
     monday = D - dt.timedelta(days=D.weekday())
@@ -159,15 +190,24 @@ def analyze(
     }
 
     # ---- year over year (same weekday 52 weeks back) --------------------------------------
-    ly = D - dt.timedelta(days=364)
+    ly = (cal.same_holiday_last_year(D) if hol else None) or (D - dt.timedelta(days=364))
     if cube.has(ly):
         t7 = sum(cube.total(D - dt.timedelta(days=i), "revenue") for i in range(7))
-        ly7 = sum(cube.total(ly - dt.timedelta(days=i), "revenue") for i in range(7))
+        ly7 = sum(cube.total(D - dt.timedelta(days=364 + i), "revenue") for i in range(7))
         out["yoy"] = {
             "ly_date": ly.isoformat(),
+            "aligned_by": "holiday" if hol else "weekday",
             "day_pct": stats.pct_change(rev["value"], cube.total(ly, "revenue")),
             "trailing7_pct": stats.pct_change(t7, ly7),
         }
+        ly_hol = cal.lookup(ly)
+        if not hol and ly_hol:
+            out["yoy"]["note"] = f"364 days back lands on {ly_hol[0]}, so the day comparison is not like-for-like."
+        # holidays inside either 7-day window make the trailing-7 comparison unfair
+        this7 = [cal.lookup(D - dt.timedelta(days=i)) for i in range(7)]
+        last7 = [cal.lookup(D - dt.timedelta(days=364 + i)) for i in range(7)]
+        if [bool(x) for x in this7] != [bool(x) for x in last7]:
+            out["yoy"]["trailing7_note"] = "A holiday falls differently inside the two 7-day windows."
 
     # ---- weekly trend (complete weeks) -----------------------------------------------------
     trend_weeks = int(rules.get("trend_weeks", 13))
@@ -179,14 +219,15 @@ def analyze(
         ty = sum(cube.total(d, "revenue") for d in days)
         ly_days = [d - dt.timedelta(days=364) for d in days]
         ly_sum = sum(cube.total(d, "revenue") for d in ly_days) if all(cube.has(d) for d in ly_days) else None
-        trend.append({"week_ending": we.isoformat(), "revenue": ty, "ly_revenue": ly_sum, "yoy_pct": stats.pct_change(ty, ly_sum)})
+        hols = sorted({cal.lookup(d)[0] for d in days if cal.is_anchor(d)})
+        trend.append({"week_ending": we.isoformat(), "revenue": ty, "ly_revenue": ly_sum, "yoy_pct": stats.pct_change(ty, ly_sum), "holidays": hols})
     out["trend"] = trend
 
     # ---- unit movers --------------------------------------------------------------------
     move_pct = float(rules.get("unit_move_pct", 0.15))
     move_abs = float(rules.get("unit_move_abs", 500))
     movers = []
-    base_days = stats.same_weekday_dates(D, weeks)
+    base_days = _base_days(cube, D, weeks, cal)
     for u in cube.keys("unit", [D] + base_days):
         x = cube.slice_total("unit", D, u, "revenue")
         base = stats.robust_baseline([cube.slice_total("unit", d, u, "revenue") for d in base_days if cube.has(d)])
@@ -197,8 +238,8 @@ def analyze(
         if pct is not None and abs(pct) >= move_pct and abs(delta) >= move_abs:
             # persistence at the unit level: did it move the same way yesterday?
             y = D - dt.timedelta(days=1)
-            ybase = stats.robust_baseline([cube.slice_total("unit", d, u, "revenue") for d in stats.same_weekday_dates(y, weeks) if cube.has(d)])
-            ypct = stats.pct_change(cube.slice_total("unit", y, u, "revenue"), ybase["median"]) if cube.has(y) else None
+            ybase = stats.robust_baseline([cube.slice_total("unit", d, u, "revenue") for d in _base_days(cube, y, weeks, cal)])
+            ypct = stats.pct_change(cube.slice_total("unit", y, u, "revenue"), ybase["median"]) if (cube.has(y) and not cal.is_holiday(y)) else None
             movers.append({
                 "unit": u, "revenue": x, "baseline": base["median"], "delta": delta, "pct": pct,
                 "z": stats.zscore(x, base),
@@ -235,7 +276,7 @@ def analyze(
     for name, srows in (segment_rows or {}).items():
         scube = Cube(srows, measures, ["unit"])
         x = scube.total(D, "revenue")
-        base = _baseline_for(scube, D, "revenue", weeks)
+        base = _baseline_for(scube, D, "revenue", weeks, cal)
         out["segments"][name] = {"revenue": x, "baseline": base["median"], "pct": stats.pct_change(x, base["median"]), "z": stats.zscore(x, base)}
 
     # ---- flags + verdict ----------------------------------------------------------------
@@ -254,6 +295,25 @@ def _flag(out: dict, cfg: dict, floor: float, z_thr: float) -> None:
     delta = (rev["value"] or 0) - (rev["baseline"] or 0)
     big_enough = abs(delta) >= floor
     moved = rev["z"] is not None and abs(rev["z"]) >= z_thr and big_enough
+
+    hol = out.get("holiday")
+    if hol and hol.get("is_anchor"):
+        # A holiday is not a normal day. Compare to the same holiday last year and stop there:
+        # every unit and channel will look wrong against weekday baselines, and that is not news.
+        if hol.get("pct_vs_ly") is not None:
+            flags.append({"kind": "holiday", "severity": "info",
+                          "text": f"{hol['name']}: revenue {_pct(hol['pct_vs_ly'])} and {voc['orders']} {_pct(hol['orders_pct_vs_ly'])} vs {hol['name']} last year "
+                                  f"({hol['ly_date']}, a {hol['ly_weekday']}). Weekday baselines are shown for reference only.",
+                          "playbook": pb.get("general")})
+            out["verdict"] = f"{hol['name']}: revenue {_pct(hol['pct_vs_ly'])} vs the same holiday last year."
+        else:
+            out["verdict"] = f"{hol['name']}: no same-holiday comparison available; {_pct(rev['pct'])} vs normal {out['weekday']}s, which is not a fair test."
+        return
+    if hol:
+        flags.append({"kind": "holiday_adjacent", "severity": "info",
+                      "text": f"Yesterday was the {hol['label']}. Baselines exclude past holidays, but expect the number to be off its weekday norm"
+                              + (f"; vs the same day last year it is {_pct(hol['pct_vs_ly'])}." if hol.get("pct_vs_ly") is not None else "."),
+                      "playbook": pb.get("general")})
 
     if moved and delta < 0:
         driver = "volume" if abs(dec.get("volume_effect", 0)) >= abs(dec.get("value_effect", 0)) else "value"

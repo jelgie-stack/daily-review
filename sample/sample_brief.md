@@ -1,77 +1,78 @@
 # Juniper Kitchen: Thursday Oct 8, 2026
 
-**Soft, and it is a trend: revenue -9.5% vs baseline today, and below baseline on 2 of the last 3 days.**
+**Soft, and it is a trend: revenue -6.4% vs baseline today, and below baseline on 3 of the last 3 days.**
 
 ## What needs attention
 
-- 🔴 Revenue is -9.5% vs the same-weekday baseline. Fewer checks cost -$1,885; a higher average check clawed back $651. _Playbook: `diagnostics/volume_drop.md`_
-- 🟠 New customers are -38.2% vs baseline (126 vs a typical 204). _Playbook: `diagnostics/new_customer_drop.md`_
-- 🔴 1 store is off by 15%+ vs its own baseline (U07). U07 was down yesterday too. _Playbook: `diagnostics/unit_drop.md`_
-- 🟡 Channel mix moved: in-store is -5.8 pts of revenue share vs its usual 55%. _Playbook: `diagnostics/channel_shift.md`_
-- 🟡 Daypart mix moved: lunch is -3.3 pts of revenue share vs its usual 37%. _Playbook: `diagnostics/daypart_shift.md`_
+- 🔴 Revenue is -6.4% vs the same-weekday baseline. Fewer checks cost -$1,681; a higher average check clawed back $847. _Playbook: `diagnostics/volume_drop.md`_
+- 🟠 New customers are -35.0% vs baseline (133 vs a typical 204). _Playbook: `diagnostics/new_customer_drop.md`_
+- 🔴 2 stores are off by 15%+ vs their own baseline (U07, U04). U07 was down yesterday too. _Playbook: `diagnostics/unit_drop.md`_
+- 🟡 Channel mix moved: in-store is -2.7 pts of revenue share vs its usual 54%. _Playbook: `diagnostics/channel_shift.md`_
+- 🟡 Daypart mix moved: lunch is +2.7 pts of revenue share vs its usual 38%. _Playbook: `diagnostics/daypart_shift.md`_
 
 ## Yesterday vs. the same weekday
 
-Baseline = median of the trailing 8 Thursdays. z = robust z-score; |z| ≥ 2.0 counts as a real move.
+Baseline = median of the trailing 8 Thursdays, skipping holidays. z = robust z-score; |z| ≥ 2.0 counts as a real move.
 
 | Measure | Yesterday | Baseline | Change | z |
 |---|---:|---:|---:|---:|
-| Revenue | $11,820 | $13,054 | -9.5% | -5.5 |
-| Checks | 705 | 824 | -14.4% | -8.0 |
-| New customers | 126 | 204 | -38.2% | -5.5 |
-| Avg check | $17 | $16 | +5.8% | |
+| Revenue | $12,175 | $13,008 | -6.4% | -2.9 |
+| Checks | 721 | 828 | -12.9% | -5.3 |
+| New customers | 133 | 204 | -35.0% | -5.4 |
+| Avg check | $17 | $16 | +7.5% | |
 
-**Why:** of the -$1,234 gap to baseline, -$1,885 is checks (volume) and $651 is average check (value).
+**Why:** of the -$834 gap to baseline, -$1,681 is checks (volume) and $847 is average check (value).
 
-**Run check:** revenue z over the last 3 days (10-08: -5.5, 10-07: -2.9, 10-06: +2.4). Same direction on enough days to call it a trend.
+**Run check:** revenue z over the last 3 days (10-08: -2.9, 10-07: -3.7, 10-06: -1.8). Same direction on enough days to call it a trend.
 
-**Week to date (4 days):** $46,161, -6.0% vs the same days last week; typical for these days is $47,922.
-**Year over year:** -3.7% vs the same weekday last year; trailing 7 days +0.2%.
+**Week to date (4 days):** $46,388, -2.9% vs the same days last week; typical for these days is $47,948.
+**Year over year:** -0.8% vs the same weekday last year (2025-10-09); trailing 7 days +1.2%.
 
 ## Stores that moved (12 reporting)
 
 | Store | Yesterday | Baseline | Change | Yesterday too? |
 |---|---:|---:|---:|:---:|
-| U07 | $596 | $954 | -37.6% | yes |
+| U07 | $461 | $854 | -46.0% | yes |
+| U04 | $620 | $934 | -33.6% | no |
 
 ## Channel mix
 
 | Channel | Revenue | vs baseline | Share | Usual share |
 |---|---:|---:|---:|---:|
-| in-store | $5,847 | -19.2% | 49% | 55% |
-| online | $3,378 | -7.1% | 29% | 28% |
-| delivery | $2,595 | +16.9% | 22% | 17% |
+| in-store | $6,197 | -10.8% | 51% | 54% |
+| online | $3,438 | -3.7% | 28% | 28% |
+| delivery | $2,540 | +4.3% | 21% | 19% |
 
 ## Daypart mix
 
 | Daypart | Revenue | vs baseline | Share | Usual share |
 |---|---:|---:|---:|---:|
-| dinner | $5,154 | -3.6% | 44% | 41% |
-| lunch | $4,006 | -16.9% | 34% | 37% |
-| afternoon | $1,680 | +9.1% | 14% | 12% |
-| breakfast | $981 | -18.7% | 8% | 9% |
+| dinner | $4,997 | -8.7% | 41% | 41% |
+| lunch | $4,934 | +0.2% | 41% | 38% |
+| afternoon | $1,478 | -9.2% | 12% | 12% |
+| breakfast | $766 | -31.6% | 6% | 9% |
 
 ## Reported separately
 
-- **Catering:** $391 vs a typical $657 (-40.5%). Kept out of the core numbers above.
+- **Catering:** $1,211 vs a typical $816 (+48.5%). Kept out of the core numbers above.
 
 ## 13-week trend (complete weeks)
 
-| Week ending | Revenue |
-|---|---:|
-| 2026-07-12 | $93,030 |
-| 2026-07-19 | $93,337 |
-| 2026-07-26 | $92,680 |
-| 2026-08-02 | $92,861 |
-| 2026-08-09 | $93,388 |
-| 2026-08-16 | $93,037 |
-| 2026-08-23 | $91,075 |
-| 2026-08-30 | $91,177 |
-| 2026-09-06 | $92,254 |
-| 2026-09-13 | $91,608 |
-| 2026-09-20 | $89,627 |
-| 2026-09-27 | $91,570 |
-| 2026-10-04 | $91,630 |
+| Week ending | Revenue | Holidays |
+|---|---:|---|
+| 2026-07-12 | $94,812 |  |
+| 2026-07-19 | $94,776 |  |
+| 2026-07-26 | $95,267 |  |
+| 2026-08-02 | $92,722 |  |
+| 2026-08-09 | $90,858 |  |
+| 2026-08-16 | $91,936 |  |
+| 2026-08-23 | $92,797 |  |
+| 2026-08-30 | $92,640 |  |
+| 2026-09-06 | $93,398 |  |
+| 2026-09-13 | $91,729 | Labor Day |
+| 2026-09-20 | $90,485 |  |
+| 2026-09-27 | $92,117 |  |
+| 2026-10-04 | $90,936 |  |
 
 ---
 _Generated by daily-review · profile `restaurant` · rules: baseline 8 weeks, z ≥ 2.0, floor $500_
