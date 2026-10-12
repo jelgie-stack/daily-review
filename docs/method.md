@@ -1,5 +1,10 @@
 # The method
 
+**Contents:** [1. Same-weekday baselines](#1-same-weekday-baselines) · [2. Robust statistics](#2-robust-statistics) ·
+[3. Floors](#3-floors) · [4. Decomposition](#4-decomposition) · [5. Persistence](#5-persistence) ·
+[6. Lumpy segments](#6-separating-lumpy-segments) · [7. Holidays](#7-holidays) · [8. Context](#8-context-what-else-was-true) ·
+[9. Verdict first](#9-one-verdict-then-flags-then-tables) · [Not included](#what-it-deliberately-does-not-do)
+
 Most "daily dashboards" fail the same way: they show every number, compare it to yesterday or
 to a monthly average, and leave the reader to decide what matters. By week three nobody opens
 them. This review was built around the opposite idea: show only what changed, prove it changed,

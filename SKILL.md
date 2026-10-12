@@ -1,111 +1,107 @@
 ---
 name: daily-review
 description: >-
-  Runs a morning business review that only flags changes that are real. Use when the user says
-  "run the daily review", "morning brief", "how did yesterday go", "daily numbers", or when a
-  scheduled task fires with one of those phrases. Pulls yesterday's revenue and orders by unit and
-  channel from the configured warehouse, compares every number to its same-weekday baseline,
-  splits revenue moves into volume vs value, checks whether a move is a trend or a one-off, lists
-  the units that moved, and points each flag at a diagnostic playbook. Works for any business with
-  a daily revenue stream (profiles: generic, restaurant, ecommerce). Delivers the brief in chat and
-  as a Markdown file. Never creates emails or messages on its own.
+  Runs a morning business review that only flags changes that are real. Triggers on "run the
+  daily review", "morning brief", "how did yesterday go", "daily numbers", or a scheduled task
+  with those words. Pulls yesterday's revenue and orders by unit and channel from the configured
+  warehouse, compares each to its same-weekday baseline, splits revenue moves into volume vs
+  value, tests whether a move is a trend, handles holidays, attaches context (promos, outages,
+  weather), and points every flag at a diagnostic playbook. Works for any business with a daily
+  revenue stream (profiles: generic, restaurant, ecommerce). Delivers the brief in chat and as a
+  Markdown file. Never sends anything on its own.
 ---
 
 # Daily Review
 
-A morning brief for someone who runs a business and has two minutes. The method has four rules,
-and every step below exists to enforce one of them:
+**Contents:** [Install](#install) · [Non-negotiables](#non-negotiables) · [Run checklist](#run-checklist) ·
+[If something is off](#if-something-is-off) · [Deliver](#deliver) · [Your judgment](#your-judgment) ·
+[Reference](#reference)
 
-1. **Compare like with like.** A Tuesday is judged against the last eight Tuesdays, never
-   against Monday or against a monthly average.
-2. **Explain revenue before reporting it.** Revenue = volume × value. Say which one moved.
-3. **Don't cry wolf.** A move has to be statistically unusual (robust z ≥ 2), big enough to
-   matter (a currency floor), and, to be called a trend, pointing the same way on 2 of the last
-   3 days.
-4. **Every flag comes with a next step.** Each flag names a playbook in `diagnostics/`.
-5. **A holiday is not a bad weekday.** Holidays leave the baselines, get compared to the same
-   holiday last year, and never start a trend.
-6. **Context explains, never hides.** Promos, outages, hours, and notable weather attach to
-   the flags they explain. The flag stays.
+## Install
 
-## Setup (once per business)
+Python 3.10+, `pip install -r requirements.txt` (pyyaml, duckdb), plus one warehouse client if
+not DuckDB (`google-cloud-bigquery`, `snowflake-connector-python`, or `psycopg2-binary`). The
+repo folder is the skill. First-time setup and floor tuning: [docs/setup.md](docs/setup.md).
+Hooks that enforce the non-negotiables in code: [hooks/](hooks/README.md).
 
-1. Copy `config/config.example.yaml` to `config/config.yaml` (or start from the BigQuery,
-   Snowflake, or restaurant example).
-2. Fill in `source` and the `columns` / `measures` expressions in your warehouse's SQL. That is
-   the whole integration: the engine issues one `GROUP BY` query. See `docs/adapters.md`.
-3. Pick a `profile` (`generic`, `restaurant`, `ecommerce`) and tune `rules` to the size of the
-   business. The floors matter more than the z threshold: set `min_signal_revenue` to the
-   smallest daily revenue move anyone would act on, and `unit_move_abs` to the same for a
-   single unit.
-4. Run `python -m review.run --config config/config.yaml` once and read the brief with the
-   owner of the numbers. Adjust floors until the quiet days are quiet.
+## Non-negotiables
 
-## Running the review
+These do not bend, whatever the user's tone or the length of the session.
 
-**Preferred: Python is available.**
+1. **Run the engine.** Never estimate baselines, z-scores or the volume/value split by eye.
+   A brief without them is a guess wearing the brief's clothes.
+2. **The review date is the review date.** If it has no data, deliver the no-data line and
+   stop. Never substitute an older day without saying so in the first sentence.
+3. **Flags are not deleted.** Context, holidays and your own theories annotate a flag; they
+   never remove it. The engine already handles holidays; do not second-guess it in prose.
+4. **Nothing is sent.** No email, chat message, or post unless the user asks in this session.
+   Drafts are fine. (`hooks/block_sends.py` enforces this.)
+5. **No guessed context.** A context row is added only from something you were told or read,
+   always with a `source`. A wrong explanation stops someone looking.
 
-```bash
-python -m review.run --config config/config.yaml            # yesterday, business time zone
-python -m review.run --config config/config.yaml --date 2026-10-08
-```
+## Run checklist
 
-The brief prints to stdout and lands in `out/YYYYMMDD-daily-review.md` with a JSON twin.
+Do these in order. Each step says what "done" looks like; if it is not, go back.
 
-**Fallback: no Python, but a warehouse connector (MCP) is available.**
+1. **Resolve the date.** Default is yesterday in `business.timezone`. If the user named a day,
+   use it. Say which date you are running before you run it.
+2. **Run.**
+   `python -m review.run --config config/config.yaml --date YYYY-MM-DD`
+   Done when stdout ends with `[written] out/YYYYMMDD-daily-review.md`.
+   No Python? Go to [no Python](#no-python).
+3. **Verify.**
+   `python -m review.check --config config/config.yaml --date YYYY-MM-DD`
+   Done when it prints `REVIEW CHECK PASSED`. If it fails, every line it prints names the fix;
+   apply it and **go back to step 2**. Do not deliver a brief that failed the check.
+4. **Read the brief yourself** before the user does. Does the verdict match the flags? Does the
+   volume/value split agree with the unit and channel tables? If the brief contradicts itself,
+   the usual cause is a floor set wrong for this business: fix `rules` in config and **go back
+   to step 2**.
+5. **Work the playbooks.** For each flag, open the playbook it names and run its checks with
+   the tools you have (the warehouse connector, analytics, email, chat). Add what you find as
+   sub-bullets under the flag, in the `.md` file as well as in chat: the file is the record.
+   Stop at the first check that explains the move and say so.
+   Anything you learned that is a fact about the day (a promo ended, a store closed early)
+   becomes a context row per [docs/context.md](docs/context.md), **then go back to step 2** so
+   the brief carries it.
+6. **Deliver** (below).
 
-1. `python -m review.run --config config/config.yaml --print-sql` prints the exact query. If
-   even that is not possible, build it by hand from `review/query.py`: it is a dozen lines.
-2. Run the query through the connector and save the rows as CSV or JSON.
-3. `python -m review.run --config config/config.yaml --rows rows.csv` does the analysis
-   offline.
+### No Python
 
-Do not try to reproduce the statistics in your head. The baselines, z-scores and
-decomposition are the product; a brief without them is a guess.
+`python -m review.run ... --print-sql` prints the exact query; run it through the warehouse
+connector, save the rows as CSV, then `python -m review.run ... --rows rows.csv`. If there is
+no Python at all, the query is a dozen lines in `review/query.py`; run it through the
+connector and tell the user the statistics could not be computed. Do not improvise them.
 
-## Keeping context current
+## If something is off
 
-The most useful thing the agent can do between reviews is keep `context.csv` honest. When
-you learn, from email, chat, a ticket, or the user, that something happened that would
-explain a day (a promotion started or ended, a store had reduced hours, checkout broke, a
-price changed, a competitor opened), append a row:
+| symptom | cause | do |
+|---|---|---|
+| `check` passes with "no data" | warehouse not loaded yet, or closed day | deliver the no-data line only; offer to rerun later; skip steps 4–5 |
+| everything is flagged | floors too low, or catering/wholesale in the core | `docs/setup.md` → Tune; rerun |
+| nothing is ever flagged | floors too high, or a step change in the baseline window | same |
+| a holiday reads as a disaster | date missing from `profiles/holidays.yaml` | add it under `holidays:` in config; rerun |
+| weather warning in the brief | API unreachable | deliver anyway; the numbers do not wait on weather |
+| query errors on a column | config expression wrong for this warehouse | fix `config.yaml`; `docs/adapters.md` |
 
-```
-date,scope,kind,note,severity,source
-2026-10-08,channel:online,outage,"Checkout 502s 11:40 to 12:25",medium,agent:email
-```
+## Deliver
 
-Scope is `all`, a unit id, or `channel:<name>`. Kind is one of `promo`, `outage`, `hours`,
-`pricing`, `event`, `competitor`, or a plain word. Always set `source` to where you got it
-(`agent:email`, `agent:slack`, `user`). Do not add rows you are guessing at: a wrong
-explanation is worse than none, because it stops someone looking.
+Paste the whole brief into chat, verdict first. Then the one thing you would do today, in a
+sentence, with the owner if there is one. Then the file path. Sample output to match:
+[restaurant](sample/sample_brief.md) · [generic](sample/sample_brief_generic.md) ·
+[holiday](sample/sample_brief_holiday.md).
 
-## Delivering the brief
+## Your judgment
 
-- Paste the full brief into chat. Lead with the verdict line, then "What needs attention".
-- When a flag names a playbook, open it (`diagnostics/<name>.md`) and run its checks with the
-  tools available (the warehouse connector, analytics, the CRM). Add what you find under the
-  flag as sub-bullets. Stop when a check explains the move; say so plainly.
-- If the data for the review date is missing, say that and stop. Do not fall back to an
-  older date without telling the user.
-- Never send the brief anywhere (email, chat tools) unless the user asks in that session.
+The engine decides what is flagged; you decide what it means. Free rein on: which playbook
+checks to run first, how to phrase the day for this reader, what to recommend, and whether a
+pattern across several days deserves a line the engine would not write. Say when you are
+speculating. "Unexplained, watching" is an acceptable verdict.
 
-## When the brief is wrong
+## Reference
 
-- **Everything is flagged.** The floors are too low or a lumpy segment (catering, wholesale,
-  B2B) is mixed into the core. Raise `min_signal_revenue` / `unit_move_abs`, or move the
-  segment to `segments.exclude_from_core` via the profile and give it a filter.
-- **Nothing is ever flagged.** The floors are too high, or `baseline_weeks` spans a period
-  with a step change (new stores, a price increase). Shorten the baseline.
-- **A holiday looks like a disaster.** It should not: the calendar in `profiles/holidays.yaml`
-  switches a holiday to a same-holiday-last-year comparison and keeps holidays out of
-  baselines. If a local holiday or event is missing, add it under `holidays:` in config.
-
-## Files
-
-- `review/` — engine: `config.py`, `query.py`, `stats.py`, `analyze.py`, `brief.py`, `run.py`
-- `adapters/` — DuckDB, BigQuery, Snowflake, Postgres/Redshift (one method each)
-- `profiles/` — vocabulary and default rules per kind of business
-- `diagnostics/` — the playbooks flags point to
-- `docs/method.md` — why each rule exists; `docs/adapters.md` — hooking up a warehouse
-- `sample/` — a fake business with planted anomalies so the whole thing runs offline
+- Why each rule exists: [docs/method.md](docs/method.md)
+- Pointing it at a warehouse: [docs/adapters.md](docs/adapters.md)
+- Context rows and weather: [docs/context.md](docs/context.md)
+- Playbooks: [diagnostics/](diagnostics/)
+- Scenarios this skill is tested against: [evals/scenarios.md](evals/scenarios.md)

@@ -25,6 +25,10 @@ work the playbooks with whatever tools it has.
 
 Full sample output: [restaurant profile](sample/sample_brief.md) · [generic profile](sample/sample_brief_generic.md) · [a holiday](sample/sample_brief_holiday.md).
 
+**Contents:** [Why](#why-this-exists) · [Try it](#try-it-in-two-minutes) · [Your warehouse](#point-it-at-your-warehouse) ·
+[Profiles](#profiles-not-forks) · [Context and weather](#context-events-and-weather) · [As a Claude skill](#as-a-claude-skill) ·
+[Layout](#layout) · [Tuning](#tuning) · [Not included](#not-included-on-purpose)
+
 ## Why this exists
 
 Dashboards show everything and explain nothing, so people stop reading them. The rules here
@@ -128,10 +132,12 @@ Either way, context is attached to the flag it explains and never used to hide o
 
 ## As a Claude skill
 
-[`SKILL.md`](SKILL.md) tells Claude when to run the review, how to run it (Python, or
-`--print-sql` plus a warehouse connector), how to deliver the brief, and how to work the
-playbook for each flag with the tools it has. Install the repo folder as a skill and schedule
-"run the daily review" for each morning.
+[`SKILL.md`](SKILL.md) is written for an agent: five non-negotiables, a six-step checklist
+with a verifier (`python -m review.check`) and go-back instructions, a symptom table, and a
+clear line between what the engine decides and what the agent is free to judge. Two rules
+are enforced by [hooks](hooks/README.md) rather than prose. The skill is tested against the
+scenarios in [`evals/scenarios.md`](evals/scenarios.md). Install the repo folder as a skill and
+schedule "run the daily review" for each morning.
 
 ## Layout
 

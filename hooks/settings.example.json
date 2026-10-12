@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [{"type": "command", "command": "python3 hooks/check_context_csv.py"}]
+      },
+      {
+        "matcher": "mcp__.*",
+        "hooks": [{"type": "command", "command": "python3 hooks/block_sends.py"}]
+      }
+    ]
+  }
+}
